@@ -4,3 +4,39 @@ on:
   push:
     branches:
       - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: action/checkout@v1
+      - name: npm install and build webpack
+        run: |
+          npm install
+          npm build
+      - uses: actions/upload-artifact@master
+        with:
+          name: webpack artifacts
+          path: public
+
+
+  deploy:
+    name: deploy nodejs app to aws
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+        - uses: actions/checkout@v1
+
+        - name: download build artifact
+          uses: actions/download-artifact@master
+          with:
+            name: webpack artifacts
+            path: public
+
+        - name: deploy to aws
+          uses: docker://admiralawkbar/aws-nodejs:latest
+          env:
+            AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+            AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
